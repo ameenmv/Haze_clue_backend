@@ -1,0 +1,33 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
+import { DevicesModule } from './devices/devices.module';
+import { ReportsModule } from './reports/reports.module';
+import { SessionsModule } from './sessions/sessions.module';
+import { UsersModule } from './users/users.module';
+
+@Module({
+  imports: [
+    // ── Global Config ──────────────────────────────────────────
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
+
+    // ── MongoDB Connection ─────────────────────────────────────
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        uri: config.get<string>('MONGODB_URI'),
+      }),
+    }),
+
+    // ── Feature Modules ────────────────────────────────────────
+    UsersModule,
+    SessionsModule,
+    DevicesModule,
+    ReportsModule,
+  ],
+})
+export class AppModule {}
