@@ -20,6 +20,9 @@ export class User {
   @Prop()
   avatar?: string;
 
+  @Prop({ trim: true })
+  bio?: string;
+
   @Prop({ default: 0 })
   status: number; // 0 = unverified, 1 = active
 

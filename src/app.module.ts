@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { AuthModule } from './auth/auth.module';
 import { DevicesModule } from './devices/devices.module';
 import { ReportsModule } from './reports/reports.module';
 import { SessionsModule } from './sessions/sessions.module';
@@ -24,6 +25,7 @@ import { UsersModule } from './users/users.module';
     }),
 
     // ── Feature Modules ────────────────────────────────────────
+    AuthModule,
     UsersModule,
     SessionsModule,
     DevicesModule,
