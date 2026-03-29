@@ -25,9 +25,14 @@ async function bootstrap() {
     }),
   );
 
-  // ── CORS for Nuxt dev server ───────────────────────────────
+  // ── CORS ────────────────────────────────────────────────────
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3003'],
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:3003',
+      'https://hazeclue.netlify.app',
+    ],
     credentials: true,
   });
 
