@@ -23,6 +23,15 @@ export class User {
   @Prop({ trim: true })
   bio?: string;
 
+  @Prop({ default: false })
+  twoFactorEnabled?: boolean;
+
+  @Prop({ default: true })
+  emailNotifications?: boolean;
+
+  @Prop({ default: false })
+  marketingEmails?: boolean;
+
   @Prop({ default: 0 })
   status: number; // 0 = unverified, 1 = active
 
@@ -56,6 +65,12 @@ UserSchema.index({ 'resetToken.token': 1 }, { sparse: true });
 UserSchema.set('toJSON', {
   transform: (_doc: any, ret: any) => {
     ret.id = ret._id;
+    
+    // Parse name
+    const parts = (ret.fullName || '').trim().split(/\s+/);
+    ret.firstName = parts[0] || '';
+    ret.lastName = parts.slice(1).join(' ');
+
     delete ret._id;
     delete ret.__v;
     delete ret.password;

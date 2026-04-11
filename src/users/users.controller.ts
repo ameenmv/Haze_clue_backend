@@ -41,7 +41,23 @@ export class UsersController {
     @CurrentUser() userId: string,
     @Body() dto: UpdateUserDto,
   ) {
-    const user = await this.usersService.update(userId, dto);
+    const updatePayload: any = { ...dto };
+    
+    if (dto.firstName !== undefined || dto.lastName !== undefined) {
+      const currentUser = await this.usersService.findById(userId);
+      const currentDesc = (currentUser?.fullName || '').split(' ');
+      const currentFirst = currentDesc[0] || '';
+      const currentLast = currentDesc.slice(1).join(' ');
+      
+      const newFirst = dto.firstName !== undefined ? dto.firstName : currentFirst;
+      const newLast = dto.lastName !== undefined ? dto.lastName : currentLast;
+      
+      updatePayload.fullName = `${newFirst} ${newLast}`.trim();
+      delete updatePayload.firstName;
+      delete updatePayload.lastName;
+    }
+
+    const user = await this.usersService.update(userId, updatePayload);
     if (!user) throw new NotFoundException('User not found');
     return user.toJSON();
   }

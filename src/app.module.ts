@@ -4,8 +4,10 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { DevicesModule } from './devices/devices.module';
+import { LookupsModule } from './lookups/lookups.module';
 import { ReportsModule } from './reports/reports.module';
 import { SessionsModule } from './sessions/sessions.module';
+import { SupportModule } from './support/support.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -32,6 +34,8 @@ import { UsersModule } from './users/users.module';
     DevicesModule,
     ReportsModule,
     DashboardModule,
+    LookupsModule,
+    SupportModule,
   ],
 })
 export class AppModule {}
