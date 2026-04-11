@@ -7,13 +7,12 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
 import { SessionsService } from './sessions.service';
 
 @WebSocketGateway({ cors: true })
 export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  server: Server;
+  server: any;
 
   private activeIntervals = new Map<string, NodeJS.Timeout>();
 
@@ -21,7 +20,7 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     private readonly sessionsService: SessionsService,
   ) {}
 
-  async handleConnection(client: Socket) {
+  async handleConnection(client: any) {
     const token = (client.handshake.query.token as string) || (client.handshake.headers.authorization?.split(' ')[1]);
     
     // We mock jwt verification to avoid failing if token isn't fully valid during demo
@@ -45,14 +44,14 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     this.startSimulationForSession(sessionId);
   }
 
-  handleDisconnect(client: Socket) {
+  handleDisconnect(client: any) {
     // Clean up if needed
   }
 
   @SubscribeMessage('action')
   handleAction(
     @MessageBody() data: { action: string },
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
   ) {
     for (const room of client.rooms) {
       if (room.startsWith('session_')) {

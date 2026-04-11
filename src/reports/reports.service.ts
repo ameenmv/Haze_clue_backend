@@ -51,7 +51,7 @@ export class ReportsService {
     const report = await this.reportModel.create({
       user: new Types.ObjectId(userId),
       session: new Types.ObjectId(dto.sessionId),
-      title: `${session.name || 'Session'} - ${dto.type === 'attention_analysis' ? 'Attention Analysis' : 'Session Summary'}`,
+      title: `${session.title || 'Session'} - ${dto.type === 'attention_analysis' ? 'Attention Analysis' : 'Session Summary'}`,
       data: {
         avgAttention: Math.floor(Math.random() * 20) + 70,
         peakAttention: Math.floor(Math.random() * 10) + 90,
