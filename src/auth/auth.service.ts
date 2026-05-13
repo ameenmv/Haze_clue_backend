@@ -62,6 +62,10 @@ export class AuthService {
       throw new UnauthorizedException('Account has been deactivated');
     }
 
+    if (!user.password) {
+      throw new UnauthorizedException('Please login with your social account');
+    }
+
     const passwordValid = await bcrypt.compare(dto.password, user.password);
     if (!passwordValid) {
       throw new UnauthorizedException('Invalid email or password');
@@ -150,6 +154,42 @@ export class AuthService {
     } as any);
 
     return { message: 'Password reset successfully' };
+  }
+
+  // ── OAuth Login ──────────────────────────────────────────────
+  async validateOAuthLogin(profile: any, provider: string): Promise<string> {
+    const email = profile.emails?.[0]?.value?.toLowerCase();
+    if (!email) {
+      throw new BadRequestException('No email provided by OAuth provider');
+    }
+
+    let user = await this.usersService.findByEmail(email);
+
+    if (!user) {
+      // Create new user
+      user = await this.usersService.create({
+        fullName: profile.displayName || email.split('@')[0],
+        email: email,
+        status: 1,
+        provider: provider,
+        providerId: profile.id,
+        avatar: profile.photos?.[0]?.value,
+      });
+    } else {
+      // If user exists but it's first time with this provider, link it
+      if (!user.providerId || user.provider !== provider) {
+        await this.usersService.update(user.id, {
+          provider: provider,
+          providerId: profile.id,
+        } as any);
+      }
+    }
+
+    if (user.deletedAt) {
+      throw new UnauthorizedException('Account has been deactivated');
+    }
+
+    return this._signToken(user.id, user.email);
   }
 
   // ── Private helpers ──────────────────────────────────────────

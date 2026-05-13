@@ -11,8 +11,18 @@ export class User {
   @Prop({ required: true, unique: true, lowercase: true, trim: true })
   email: string;
 
-  @Prop({ required: true })
-  password: string;
+  @Prop({ required: function() { return this.provider === 'local'; } })
+  password?: string;
+
+  @Prop({
+    type: String,
+    enum: ['local', 'google', 'facebook'],
+    default: 'local',
+  })
+  provider: string;
+
+  @Prop()
+  providerId?: string;
 
   @Prop({ trim: true })
   phone?: string;

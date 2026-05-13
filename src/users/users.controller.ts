@@ -105,6 +105,10 @@ export class UsersController {
     const user = await this.usersService.findById(userId);
     if (!user) throw new NotFoundException('User not found');
 
+    if (!user.password) {
+      throw new BadRequestException('You are using a social account and do not have a password set');
+    }
+
     const isValid = await bcrypt.compare(dto.currentPassword, user.password);
     if (!isValid) {
       throw new UnauthorizedException('Current password is incorrect');
