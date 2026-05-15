@@ -13,7 +13,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
