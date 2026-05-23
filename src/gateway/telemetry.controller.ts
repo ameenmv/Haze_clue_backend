@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { EegGateway } from './eeg.gateway';
+import { PusherService } from '../pusher/pusher.service';
 import { Telemetry, TelemetryDocument } from './schemas/telemetry.schema';
 
 @Controller('telemetry')
@@ -9,7 +9,7 @@ export class TelemetryController {
   private readonly logger = new Logger(TelemetryController.name);
 
   constructor(
-    private readonly eegGateway: EegGateway,
+    private readonly pusherService: PusherService,
     @InjectModel(Telemetry.name) private readonly telemetryModel: Model<TelemetryDocument>,
   ) {}
 
@@ -53,10 +53,10 @@ export class TelemetryController {
 
     if (data.sessionId) {
       // Route to specific session room
-      this.eegGateway.server.to(data.sessionId).emit('device:data', payload);
+      this.pusherService.trigger(`session_${data.sessionId}`, 'device:data', payload);
     } else {
       // Fallback: broadcast to device-specific channel
-      this.eegGateway.server.emit(`device:${data.deviceId}`, payload);
+      this.pusherService.trigger(`device_${data.deviceId}`, 'device:data', payload);
     }
 
     return { success: true, message: 'Telemetry data received and broadcasted' };

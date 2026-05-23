@@ -20,14 +20,12 @@ import { UpdateSessionDto } from './dto/update-session.dto';
 import { CreateMarkerDto } from './dto/create-marker.dto';
 import { SendAlertDto } from './dto/send-alert.dto';
 import { SessionsService } from './sessions.service';
-import { SessionsGateway } from './sessions.gateway';
 
 @Controller('sessions')
 @UseGuards(JwtAuthGuard)
 export class SessionsController {
   constructor(
     private readonly sessionsService: SessionsService,
-    private readonly sessionsGateway: SessionsGateway,
   ) {}
 
   // ── GET /sessions ──────────────────────────────────────────
@@ -143,7 +141,7 @@ export class SessionsController {
   ) {
     // We can check if session exists/belongs to user first
     await this.sessionsService.findOne(userId, id);
-    this.sessionsGateway.broadcastAlert(id, dto.message);
+    this.sessionsService.broadcastAlert(id, dto.message);
     return { success: true, message: 'Alert sent' };
   }
 

@@ -11,13 +11,17 @@ import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
 import { Session, SessionDocument } from './schemas/session.schema';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PusherService } from '../pusher/pusher.service';
 
 @Injectable()
 export class SessionsService {
+  private activeIntervals = new Map<string, NodeJS.Timeout>();
+
   constructor(
     @InjectModel(Session.name)
     private readonly sessionModel: Model<SessionDocument>,
     private readonly notificationsService: NotificationsService,
+    private readonly pusherService: PusherService,
   ) {}
 
   // ── List (paginated) ───────────────────────────────────────
@@ -118,7 +122,11 @@ export class SessionsService {
 
     session.status = 'active';
     session.startedAt = new Date();
-    return session.save();
+    await session.save();
+
+    // Start simulation when session is started
+    this.startSimulationForSession(id);
+    return session;
   }
 
   // ── End session ────────────────────────────────────────────
@@ -131,7 +139,11 @@ export class SessionsService {
 
     session.status = 'completed';
     session.endedAt = new Date();
-    return session.save();
+    await session.save();
+
+    // Stop simulation when session ends
+    this.stopSimulationForSession(id);
+    return session;
   }
 
   // ── Count (for dashboard) ─────────────────────────────────
@@ -181,7 +193,15 @@ export class SessionsService {
   async togglePause(userId: string, id: string): Promise<SessionDocument> {
     const session = await this.findOne(userId, id);
     session.isPaused = !session.isPaused;
-    return session.save();
+    await session.save();
+
+    if (session.isPaused) {
+      this.stopSimulationForSession(id);
+    } else {
+      this.startSimulationForSession(id);
+    }
+
+    return session;
   }
 
   // ── Export CSV ─────────────────────────────────────────────
@@ -200,6 +220,56 @@ export class SessionsService {
     }
     
     return csvRows.join('\n');
+  }
+
+  // ── Simulation Logic ───────────────────────────────────────
+  startSimulationForSession(sessionId: string) {
+    if (this.activeIntervals.has(sessionId)) return;
+
+    let elapsed = 0;
+    const interval = setInterval(() => {
+      elapsed += 2;
+      
+      const payload = {
+        type: 'attention_update',
+        timestamp: new Date().toISOString(),
+        data: {
+          classAvgAttention: Math.floor(Math.random() * 20) + 70,
+          connectedDevices: 18,
+          totalDevices: 20,
+          duration: `${Math.floor(elapsed / 60).toString().padStart(2, '0')}:${(elapsed % 60).toString().padStart(2, '0')}`,
+          remainingTime: null,
+          engagementLevel: 'high',
+          perStudent: [
+            {
+              deviceId: 'dev123',
+              studentName: 'Student A',
+              attention: Math.floor(Math.random() * 20) + 70,
+            }
+          ]
+        }
+      };
+
+      this.pusherService.trigger(`session_${sessionId}`, 'attention_update', payload);
+
+    }, 2000);
+
+    this.activeIntervals.set(sessionId, interval);
+  }
+
+  stopSimulationForSession(sessionId: string) {
+    const interval = this.activeIntervals.get(sessionId);
+    if (interval) {
+      clearInterval(interval);
+      this.activeIntervals.delete(sessionId);
+    }
+  }
+
+  broadcastAlert(sessionId: string, message: string) {
+    this.pusherService.trigger(`session_${sessionId}`, 'class_alert', {
+      timestamp: new Date().toISOString(),
+      message,
+    });
   }
 
   async generatePdfExport(userId: string, id: string): Promise<any> {

@@ -2,13 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Notification, NotificationDocument } from './schemas/notification.schema';
-import { EegGateway } from '../gateway/eeg.gateway'; // Using the gateway to emit socket events
+import { PusherService } from '../pusher/pusher.service';
 
 @Injectable()
 export class NotificationsService {
   constructor(
     @InjectModel(Notification.name) private notificationModel: Model<NotificationDocument>,
-    private readonly eegGateway: EegGateway,
+    private readonly pusherService: PusherService,
   ) {}
 
   async createNotification(userId: string, title: string, message: string, type: string = 'info', link?: string) {
@@ -22,7 +22,7 @@ export class NotificationsService {
     const saved = await notif.save();
 
     // Emit the notification real-time via websockets
-    this.eegGateway.server.emit(`notification:${userId}`, saved);
+    this.pusherService.trigger(`private-user-${userId}`, 'notification', saved);
 
     return saved;
   }

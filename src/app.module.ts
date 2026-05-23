@@ -11,6 +11,7 @@ import { ReportsModule } from './reports/reports.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { SupportModule } from './support/support.module';
 import { UsersModule } from './users/users.module';
+import { PusherModule } from './pusher/pusher.module';
 import { GatewayModule } from './gateway/gateway.module';
 import { NotificationsModule } from './notifications/notifications.module';
 
@@ -61,6 +62,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     SupportModule,
     GatewayModule,
     NotificationsModule,
+    PusherModule,
   ],
   providers: [
     // Apply rate limiting globally
