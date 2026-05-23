@@ -21,6 +21,35 @@ export class SupportService {
       message: dto.message,
     });
 
+    // Send email to hazeclue@gmail.com
+    try {
+      const transporter = require('nodemailer').createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.SMTP_USER || 'hazeclue@gmail.com',
+          pass: process.env.SMTP_PASS, // User needs to set this in .env
+        },
+      });
+
+      await transporter.sendMail({
+        from: `"HazeClue Support" <${process.env.SMTP_USER || 'hazeclue@gmail.com'}>`,
+        to: 'hazeclue@gmail.com',
+        subject: `New Support Ticket: ${dto.subject}`,
+        text: `You have received a new message from the contact form.\n\nName: ${dto.fullName}\nEmail: ${dto.email}\nSubject: ${dto.subject}\nMessage:\n${dto.message}`,
+        html: `
+          <h3>New Support Ticket</h3>
+          <p><strong>Name:</strong> ${dto.fullName}</p>
+          <p><strong>Email:</strong> ${dto.email}</p>
+          <p><strong>Subject:</strong> ${dto.subject}</p>
+          <p><strong>Message:</strong></p>
+          <p>${dto.message.replace(/\n/g, '<br>')}</p>
+        `,
+      });
+      this.logger.log(`Email sent to hazeclue@gmail.com for ticket ${ticket.id}`);
+    } catch (error) {
+      this.logger.error('Failed to send email:', error);
+    }
+
     this.logger.log(`Support ticket created: ${ticket.id} from ${dto.email}`);
     return ticket;
   }
