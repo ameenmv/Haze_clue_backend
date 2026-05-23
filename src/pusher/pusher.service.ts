@@ -4,7 +4,7 @@ import Pusher from 'pusher';
 
 @Injectable()
 export class PusherService {
-  private pusher: Pusher;
+  public pusher: Pusher;
   private readonly logger = new Logger(PusherService.name);
 
   constructor(private configService: ConfigService) {
