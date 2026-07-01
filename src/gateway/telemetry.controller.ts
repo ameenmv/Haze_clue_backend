@@ -25,13 +25,38 @@ export class TelemetryController {
       alpha?: number;
       beta?: number;
       gamma?: number;
+      rawEegWindow?: number[][]; // 14x512 matrix
     },
   ) {
+    let finalAttention = data.attention;
+
+    // If raw EEG window is provided, send it to the AI microservice for inference
+    if (data.rawEegWindow) {
+      try {
+        const aiUrl = process.env.AI_MICROSERVICE_URL || 'http://127.0.0.1:8000';
+        const aiResponse = await fetch(`${aiUrl}/api/inference`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: data.rawEegWindow }),
+        });
+        
+        if (aiResponse.ok) {
+          const result = await aiResponse.json();
+          // The AI returns a smoothed probability between 0 and 1, we convert to percentage
+          finalAttention = Math.round(result.smoothed_output * 100);
+          this.logger.debug(`AI Inference successful: new attention=${finalAttention}%`);
+        } else {
+          this.logger.error(`AI Inference failed: ${aiResponse.statusText}`);
+        }
+      } catch (error) {
+        this.logger.error(`Failed to connect to AI Microservice: ${error.message}`);
+      }
+    }
     // 1. Persist the telemetry data point
     const telemetryRecord = await this.telemetryModel.create({
       deviceId: data.deviceId,
       session: data.sessionId || undefined,
-      attention: data.attention,
+      attention: finalAttention,
       meditation: data.meditation,
       delta: data.delta,
       theta: data.theta,
@@ -41,12 +66,12 @@ export class TelemetryController {
       recordedAt: new Date(),
     });
 
-    this.logger.debug(`Telemetry received from device ${data.deviceId}: attention=${data.attention}`);
+    this.logger.debug(`Telemetry received from device ${data.deviceId}: attention=${finalAttention}`);
 
     // 2. Broadcast to session-specific room if sessionId provided, otherwise to device channel
     const payload = {
       deviceId: data.deviceId,
-      attention: data.attention,
+      attention: finalAttention,
       meditation: data.meditation,
       timestamp: telemetryRecord.recordedAt.toISOString(),
     };
