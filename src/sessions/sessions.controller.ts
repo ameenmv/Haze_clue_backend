@@ -189,25 +189,10 @@ export class SessionsController {
 
   // ── GET /sessions/:id/live-data ────────────────────────────
   @Get(':id/live-data')
-  async getLiveData(@Param('id') id: string) {
-    return {
-      type: 'attention_update',
-      timestamp: new Date().toISOString(),
-      data: {
-        classAvgAttention: Math.floor(Math.random() * 20) + 70, // 70-90
-        connectedDevices: 18,
-        totalDevices: 20,
-        duration: '25:30',
-        remainingTime: null,
-        engagementLevel: 'high',
-        perStudent: [
-          {
-            deviceId: 'dev123',
-            studentName: 'Student A',
-            attention: Math.floor(Math.random() * 20) + 70,
-          }
-        ]
-      }
-    };
+  async getLiveData(
+    @CurrentUser() userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.sessionsService.getLiveData(userId, id);
   }
 }

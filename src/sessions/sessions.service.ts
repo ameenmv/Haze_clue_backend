@@ -221,22 +221,41 @@ export class SessionsService {
   }
 
   // ── Simulation Logic ───────────────────────────────────────
-  // Note: On serverless environments (Vercel), intervals don't survive. 
-  // We use a tick mechanism driven by the frontend.
+  // We use Node intervals to run the simulation in real-time.
   private elapsedMap = new Map<string, number>();
+  private intervalMap = new Map<string, NodeJS.Timeout>();
 
   startSimulationForSession(sessionId: string) {
-    this.elapsedMap.set(sessionId, 0);
+    if (!this.elapsedMap.has(sessionId)) {
+      this.elapsedMap.set(sessionId, 0);
+    }
+    
+    // Clear any existing interval to prevent duplicates
+    if (this.intervalMap.has(sessionId)) {
+      clearInterval(this.intervalMap.get(sessionId));
+    }
+
+    const interval = setInterval(() => {
+      this.tickSimulation(sessionId);
+    }, 2000);
+    
+    this.intervalMap.set(sessionId, interval);
   }
 
   stopSimulationForSession(sessionId: string) {
-    this.elapsedMap.delete(sessionId);
+    const interval = this.intervalMap.get(sessionId);
+    if (interval) {
+      clearInterval(interval);
+      this.intervalMap.delete(sessionId);
+    }
   }
 
   tickSimulation(sessionId: string) {
     let elapsed = this.elapsedMap.get(sessionId) || 0;
     elapsed += 2;
     this.elapsedMap.set(sessionId, elapsed);
+
+    console.log(`[Simulation] Ticking session ${sessionId}, elapsed: ${elapsed}s`);
 
     const payload = {
       type: 'attention_update',
@@ -258,6 +277,7 @@ export class SessionsService {
       }
     };
 
+    console.log(`[Simulation] Triggering pusher event on session_${sessionId}`);
     this.pusherService.trigger(`session_${sessionId}`, 'attention_update', payload);
   }
 
@@ -266,6 +286,48 @@ export class SessionsService {
       timestamp: new Date().toISOString(),
       message,
     });
+  }
+
+  async getLiveData(userId: string, id: string) {
+    const session = await this.findOne(userId, id);
+    
+    console.log(`[getLiveData] Session ${id} - status: ${session.status}, isPaused: ${session.isPaused}`);
+    
+    // Kickstart backend simulation if it's supposed to be running but isn't
+    if (session.status === 'active' && !session.isPaused) {
+      console.log(`[getLiveData] Session is active and not paused. Checking interval...`);
+      if (!this.intervalMap.has(id)) {
+        console.log(`[getLiveData] Interval missing. Starting simulation!`);
+        this.startSimulationForSession(id);
+      } else {
+        console.log(`[getLiveData] Interval already running.`);
+      }
+    } else {
+      console.log(`[getLiveData] Skipping simulation start because status is '${session.status}' and isPaused is ${session.isPaused}`);
+    }
+
+    let elapsed = this.elapsedMap.get(id) || 0;
+
+    return {
+      type: 'attention_update',
+      timestamp: new Date().toISOString(),
+      isPaused: session.isPaused,
+      data: {
+        classAvgAttention: Math.floor(Math.random() * 20) + 70, // 70-90
+        connectedDevices: 18,
+        totalDevices: 20,
+        duration: `${Math.floor(elapsed / 60).toString().padStart(2, '0')}:${(elapsed % 60).toString().padStart(2, '0')}`,
+        remainingTime: null,
+        engagementLevel: 'high',
+        perStudent: [
+          {
+            deviceId: 'dev123',
+            studentName: 'Student A',
+            attention: Math.floor(Math.random() * 20) + 70,
+          }
+        ]
+      }
+    };
   }
 
   async generatePdfExport(userId: string, id: string): Promise<any> {
