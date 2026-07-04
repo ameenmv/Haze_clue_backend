@@ -127,4 +127,29 @@ export class DevicesService {
     if (status) filter.status = status;
     return this.deviceModel.countDocuments(filter).exec();
   }
+
+  // ── Scan Network (Simulation) ─────────────────────────────
+  async scanNetwork(): Promise<any[]> {
+    // Generate a random number of devices (1 to 3)
+    const count = Math.floor(Math.random() * 3) + 1;
+    const devices = [];
+    const models = ['NeuroSky MindWave - EEG', 'OpenBCI Cyton - EEG', 'Emotiv EPOC X - EEG', 'Muse 2 - BCI'];
+
+    for (let i = 0; i < count; i++) {
+      const modelName = models[Math.floor(Math.random() * models.length)];
+      const randomIp = `192.168.1.${Math.floor(Math.random() * 200) + 10}`;
+      const randomSerial = `SN-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      
+      devices.push({
+        id: Math.random().toString(36).substring(2, 9),
+        name: modelName,
+        ip: randomIp,
+        type: modelName.includes('BCI') ? 'BCI' : 'EEG',
+        serialNumber: randomSerial,
+        signal: Math.floor(Math.random() * 40) + 60, // 60-100
+      });
+    }
+
+    return devices;
+  }
 }

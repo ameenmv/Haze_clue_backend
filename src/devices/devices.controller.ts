@@ -51,6 +51,12 @@ export class DevicesController {
     return device.toJSON();
   }
 
+  // ── GET /devices/scan ──────────────────────────────────────
+  @Get('scan')
+  async scanNetwork() {
+    return this.devicesService.scanNetwork();
+  }
+
   // ── GET /devices/:id ───────────────────────────────────────
   @Get(':id')
   async findOne(
